@@ -45,19 +45,31 @@ namespace Mistaken.BetterSCP.SCP500
             }
         }
 
+        /// <inheritdoc/>
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            foreach (var item in this.disabledShields)
+                item.enabled = true;
+            this.disabledShields.Clear();
+        }
+
         private readonly List<Shield> disabledShields = new List<Shield>();
         private int maxShield = 1000;
 
         private IEnumerator Disable()
         {
-            yield return new WaitForSeconds(2.5f);
+            int i = 0;
+            while ((this.Player.ArtificialHealth < 500 || i < 25) && i < 40)
+            {
+                i++;
+                yield return new WaitForSeconds(.1f);
+            }
+
             this.maxShield = 0;
             while (this.Player.ArtificialHealth > 0)
                 yield return new WaitForSeconds(.1f);
 
-            foreach (var item in this.disabledShields)
-                item.enabled = true;
-            this.disabledShields.Clear();
             Destroy(this);
         }
     }
