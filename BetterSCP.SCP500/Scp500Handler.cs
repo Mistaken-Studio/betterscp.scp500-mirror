@@ -191,8 +191,21 @@ namespace Mistaken.BetterSCP.SCP500
 
         private void Player_UsingItem(Exiled.Events.EventArgs.UsingItemEventArgs ev)
         {
-            if (ev.Item.Type == ItemType.SCP500 && ev.Player.GetEffectActive<CustomPlayerEffects.Amnesia>())
+            if (ev.Item.Type != ItemType.SCP500)
+                return;
+            if (ev.Player.GetEffectActive<CustomPlayerEffects.Amnesia>())
                 ev.IsAllowed = false;
+            else
+            {
+                ev.Player.EnableEffect<CustomPlayerEffects.Invigorated>(30);
+                var effect = ev.Player.GetEffect(Exiled.API.Enums.EffectType.Scp207);
+                byte oldIntensity = effect.Intensity;
+                effect.Intensity = 4;
+                effect.ServerChangeDuration(15, true);
+                MEC.Timing.CallDelayed(16, () => effect.Intensity = oldIntensity);
+                ev.Player.ArtificialHealth += 1;
+                SCP500Shield.Ini<SCP500Shield>(ev.Player);
+            }
         }
 
         private void Player_ChangingItem(Exiled.Events.EventArgs.ChangingItemEventArgs ev)
