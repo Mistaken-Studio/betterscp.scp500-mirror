@@ -17,23 +17,23 @@ namespace Mistaken.BetterSCP.SCP500
         public override string Author => "Mistaken Devs";
 
         /// <inheritdoc/>
-        public override string Name => "";
+        public override string Name => "BetterSCP SCP500";
 
         /// <inheritdoc/>
-        public override string Prefix => "M";
+        public override string Prefix => "MBSCP_500";
 
         /// <inheritdoc/>
-        public override PluginPriority Priority => PluginPriority.Higher;
+        public override PluginPriority Priority => PluginPriority.Default;
 
         /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(2, 11, 0);
+        public override Version RequiredExiledVersion => new Version(3, 7, 2);
 
         /// <inheritdoc/>
         public override void OnEnabled()
         {
             Instance = this;
 
-            // new Handler(this);
+            new Scp500Handler(this);
 
             API.Diagnostics.Module.OnEnable(this);
 

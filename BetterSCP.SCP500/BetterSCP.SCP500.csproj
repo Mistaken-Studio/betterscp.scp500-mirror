@@ -36,6 +36,7 @@
   <ItemGroup>
     <Reference Include="Exiled.API" HintPath="$(MISTAKEN_REFERENCES)\Exiled.API.dll" />
     <Reference Include="Exiled.Events" HintPath="$(MISTAKEN_REFERENCES)\Exiled.Events.dll" />
+    <Reference Include="CommandSystem.Core" HintPath="$(MISTAKEN_REFERENCES)\CommandSystem.Core.dll" />
     <Reference Include="Mistaken.Updater" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.Updater.dll" />
     <Reference Include="0Mistaken.API" HintPath="$(MISTAKEN_REFERENCES)\0Mistaken.API.dll" />
     <Reference Include="Mistaken.RoundLogger" HintPath="$(MISTAKEN_REFERENCES)\Mistaken.RoundLogger.dll" />
@@ -53,9 +54,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventHandler.cs" />
     <Compile Include="PluginHandler.cs" />
     <Compile Include="Config.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResurrectCommand.cs" />
+    <Compile Include="Scp500Handler.cs" />
+    <Compile Include="Scp500PlayerRevivedEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
