@@ -197,7 +197,7 @@ namespace Mistaken.BetterSCP.SCP500
 
         private void Player_ChangingItem(Exiled.Events.EventArgs.ChangingItemEventArgs ev)
         {
-            if (ev.NewItem.Type == ItemType.SCP500)
+            if (ev.NewItem?.Type == ItemType.SCP500)
                 this.RunCoroutine(this.Interface(ev.Player), "Interface");
         }
 
@@ -205,7 +205,7 @@ namespace Mistaken.BetterSCP.SCP500
         {
             yield return Timing.WaitForSeconds(1);
 
-            while (player?.CurrentItem.Type == ItemType.SCP500)
+            while (player?.CurrentItem?.Type == ItemType.SCP500)
             {
                 try
                 {
