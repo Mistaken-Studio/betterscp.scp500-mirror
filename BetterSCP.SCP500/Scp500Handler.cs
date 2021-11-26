@@ -40,6 +40,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem += this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
+            Exiled.Events.Handlers.Player.ItemUsed += this.Player_ItemUsed;
         }
 
         public override void OnDisable()
@@ -49,6 +50,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem -= this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
+            Exiled.Events.Handlers.Player.ItemUsed -= this.Player_ItemUsed;
         }
 
         public bool Resurect(Player player)
@@ -173,6 +175,20 @@ namespace Mistaken.BetterSCP.SCP500
         private static readonly List<string> Resurections = new List<string>();
         private static readonly HashSet<string> Resurected = new HashSet<string>();
 
+        private void Player_ItemUsed(Exiled.Events.EventArgs.UsedItemEventArgs ev)
+        {
+            if (ev.Item.Type != ItemType.SCP500)
+                return;
+            ev.Player.EnableEffect<CustomPlayerEffects.Invigorated>(30);
+            var effect = ev.Player.GetEffect(Exiled.API.Enums.EffectType.Scp207);
+            byte oldIntensity = effect.Intensity;
+            effect.Intensity = 4;
+            effect.ServerChangeDuration(7, true);
+            MEC.Timing.CallDelayed(8, () => effect.Intensity = oldIntensity);
+            ev.Player.ArtificialHealth += 1;
+            SCP500Shield.Ini<SCP500Shield>(ev.Player);
+        }
+
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
             ev.Player.SetGUI("u500", PseudoGUIPosition.TOP, null);
@@ -191,7 +207,11 @@ namespace Mistaken.BetterSCP.SCP500
 
         private void Player_UsingItem(Exiled.Events.EventArgs.UsingItemEventArgs ev)
         {
-            if (ev.Item.Type == ItemType.SCP500 && ev.Player.GetEffectActive<CustomPlayerEffects.Amnesia>())
+            if (!ev.IsAllowed)
+                return;
+            if (ev.Item.Type != ItemType.SCP500)
+                return;
+            if (ev.Player.GetEffectActive<CustomPlayerEffects.Amnesia>())
                 ev.IsAllowed = false;
         }
 
@@ -229,7 +249,7 @@ namespace Mistaken.BetterSCP.SCP500
                         }
                     }
 
-                    if (!target.GetEffectActive<CustomPlayerEffects.Amnesia>())
+                    if (!player.GetEffectActive<CustomPlayerEffects.Amnesia>())
                     {
                         if (nearestDistance != 999)
                         {
