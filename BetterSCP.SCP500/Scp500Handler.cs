@@ -60,14 +60,14 @@ namespace Mistaken.BetterSCP.SCP500
             var originalRole = player.Role;
             float nearestDistance = 999;
             Ragdoll nearest = null;
-            foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.CurrentTime < PluginHandler.Instance.Config.MaxDeathTime))
+            foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.NetworkInfo.ExistenceTime < PluginHandler.Instance.Config.MaxDeathTime))
             {
-                if (ragdoll.Networkowner.FullName.ToLower().Contains("scp") || ragdoll.Networkowner.FullName.ToLower().Contains("tutorial"))
+                if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp") || ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
                     continue;
-                var target = Player.Get(ragdoll.Networkowner.PlayerId);
+                var target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                 if (target == null || target.IsOverwatchEnabled || target.GameObject == null || !target.IsConnected)
                 {
-                    player.SendConsoleMessage($"[SCP 500] {ragdoll.Networkowner.Nick} nie ma na serwerze albo ma overwatcha", "red");
+                    player.SendConsoleMessage($"[SCP 500] {ragdoll.NetworkInfo.OwnerHub.name} nie ma na serwerze albo ma overwatcha", "red");
                     continue;
                 }
 
@@ -90,7 +90,7 @@ namespace Mistaken.BetterSCP.SCP500
 
             if (nearestDistance != 999)
             {
-                var target = Player.Get(nearest.Networkowner.PlayerId);
+                var target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
                 if (Resurected.Contains(target.UserId))
                 {
                     player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz może zostać wskrzeszony raz na rundę", 5);
@@ -112,7 +112,7 @@ namespace Mistaken.BetterSCP.SCP500
                     {
                         if (player.Role == originalRole)
                         {
-                            target = Player.Get(nearest.Networkowner.PlayerId);
+                            target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
                             if (target == null || target.GameObject == null || !target.IsConnected)
                             {
                                 player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
@@ -140,7 +140,7 @@ namespace Mistaken.BetterSCP.SCP500
                             target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
                             foreach (var role in target.ReferenceHub.characterClassManager.Classes)
                             {
-                                if (role.fullName == nearest.Networkowner.FullName)
+                                if (role.fullName == nearest.NetworkInfo.OwnerHub.name)
                                     target.Role = role.roleId;
                             }
 
@@ -232,13 +232,13 @@ namespace Mistaken.BetterSCP.SCP500
                     float nearestDistance = 999;
                     Ragdoll nearest = null;
                     Player target = null;
-                    foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.CurrentTime < PluginHandler.Instance.Config.MaxDeathTime).ToArray())
+                    foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.NetworkInfo.ExistenceTime < PluginHandler.Instance.Config.MaxDeathTime).ToArray())
                     {
-                        if (ragdoll.Networkowner.FullName.ToLower().Contains("scp"))
+                        if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp"))
                             continue;
-                        if (ragdoll.Networkowner.FullName.ToLower().Contains("tutorial"))
+                        if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
                             continue;
-                        target = Player.Get(ragdoll.Networkowner.PlayerId);
+                        target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                         if (target == null)
                             continue;
                         var distance = Vector3.Distance(player.Position, ragdoll.transform.position);
@@ -253,7 +253,7 @@ namespace Mistaken.BetterSCP.SCP500
                     {
                         if (nearestDistance != 999)
                         {
-                            player.SetGUI("u500", PseudoGUIPosition.TOP, $"Wpisz '.u500' w konsoli(~) aby <color=yellow>wskrzesić</color> {target.Nickname} ({PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(nearest.CurrentTime)})");
+                            player.SetGUI("u500", PseudoGUIPosition.TOP, $"Wpisz '.u500' w konsoli(~) aby <color=yellow>wskrzesić</color> {target.Nickname} ({PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(nearest.NetworkInfo.ExistenceTime)})");
                         }
                         else
                             player.SetGUI("u500", PseudoGUIPosition.TOP, null);
