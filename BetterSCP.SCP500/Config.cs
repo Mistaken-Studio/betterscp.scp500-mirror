@@ -30,7 +30,7 @@ namespace Mistaken.BetterSCP.SCP500
         /// <summary>
         /// Gets or sets a time after which the resurrection is not possible.
         /// </summary>
-        public uint MaxDeathTime { get; set; } = 15;
+        public float MaxDeathTime { get; set; } = 15f;
 
         /// <inheritdoc/>
         [Description("Auto Update Settings")]

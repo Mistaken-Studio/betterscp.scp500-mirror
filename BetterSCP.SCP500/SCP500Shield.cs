@@ -15,7 +15,7 @@ namespace Mistaken.BetterSCP.SCP500
     public class SCP500Shield : Shield
     {
         /// <inheritdoc/>
-        protected override int MaxShield => this.maxShield;
+        protected override float MaxShield => this.maxShield;
 
         /// <inheritdoc/>
         protected override float ShieldRechargeRate => 500f;
