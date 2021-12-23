@@ -135,16 +135,11 @@ namespace Mistaken.BetterSCP.SCP500
                             NetworkServer.Destroy(nearest.gameObject);
                             Resurected.Add(target.UserId);
                             Resurections.Add(player.UserId);
-                            ((Consumable)player.CurrentItem.Base).ServerOnUsingCompleted();
+                            var item = player.CurrentItem;
+                            player.RemoveItem(item, false);
                             target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
                             target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
-                            foreach (var role in target.ReferenceHub.characterClassManager.Classes)
-                            {
-                                if (role.fullName == nearest.NetworkInfo.OwnerHub.name)
-                                    target.Role = role.roleId;
-                                else
-                                    this.Log.Debug($"{role.fullName} != {nearest.NetworkInfo.OwnerHub.name}", PluginHandler.Instance.Config.VerbouseOutput);
-                            }
+                            target.Role = nearest.NetworkInfo.RoleType;
 
                             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
                             target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
@@ -154,6 +149,8 @@ namespace Mistaken.BetterSCP.SCP500
                                 0.5f,
                                 () =>
                                 {
+                                    target.AddItem(item);
+                                    ((Consumable)item.Base).ServerOnUsingCompleted();
                                     target.Position = pos + Vector3.up;
                                     target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=yellow>wskrzeszony</color> przez {player.Nickname}", 5);
                                     target.Health = 5;
