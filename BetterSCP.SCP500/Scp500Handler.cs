@@ -142,6 +142,8 @@ namespace Mistaken.BetterSCP.SCP500
                             {
                                 if (role.fullName == nearest.NetworkInfo.OwnerHub.name)
                                     target.Role = role.roleId;
+                                else
+                                    this.Log.Debug($"{role.fullName} != {nearest.NetworkInfo.OwnerHub.name}", PluginHandler.Instance.Config.VerbouseOutput);
                             }
 
                             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
