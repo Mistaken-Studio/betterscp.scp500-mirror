@@ -150,7 +150,18 @@ namespace Mistaken.BetterSCP.SCP500
                                 () =>
                                 {
                                     target.AddItem(item);
-                                    this.CallDelayed(0.5f, () => ((Consumable)item.Base).ServerOnUsingCompleted());
+                                    this.CallDelayed(
+                                        0.5f,
+                                        () =>
+                                        {
+                                            try
+                                            {
+                                                ((Consumable)item.Base).ServerOnUsingCompleted();
+                                            }
+                                            catch
+                                            {
+                                            }
+                                        });
                                     this.CallDelayed(0.5f, () => target.Position = pos + Vector3.up);
                                     target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=yellow>wskrzeszony</color> przez {player.Nickname}", 5);
                                     target.Health = 5;
