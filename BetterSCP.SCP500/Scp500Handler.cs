@@ -244,12 +244,14 @@ namespace Mistaken.BetterSCP.SCP500
                     Player target = null;
                     foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.NetworkInfo.ExistenceTime < PluginHandler.Instance.Config.MaxDeathTime).ToArray())
                     {
+                        target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
+                        if (target == null)
+                            continue;
+                        if (!target.IsConnected)
+                            continue;
                         if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp"))
                             continue;
                         if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
-                            continue;
-                        target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
-                        if (target == null)
                             continue;
                         var distance = Vector3.Distance(player.Position, ragdoll.transform.position);
                         if (distance < PluginHandler.Instance.Config.MaximalDistance && distance < nearestDistance)
