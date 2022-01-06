@@ -49,8 +49,12 @@ namespace Mistaken.BetterSCP.SCP500
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            foreach (var item in this.disabledShields)
-                item.enabled = true;
+            foreach (var item in this.gameObject.GetComponents<Shield>())
+            {
+                if (this.disabledShields.Contains(item))
+                    item.enabled = true;
+            }
+
             this.disabledShields.Clear();
         }
 
