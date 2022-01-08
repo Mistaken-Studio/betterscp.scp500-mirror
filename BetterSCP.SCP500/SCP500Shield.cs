@@ -64,14 +64,14 @@ namespace Mistaken.BetterSCP.SCP500
         private IEnumerator Disable()
         {
             int i = 0;
-            while ((this.Player.ArtificialHealth < 500 || i < 25) && i < 40)
+            while ((this.Process.CurrentAmount < 500 || i < 25) && i < 40)
             {
                 i++;
                 yield return new WaitForSeconds(.1f);
             }
 
             this.maxShield = 0;
-            while (this.Player.ArtificialHealth > 0)
+            while (this.Process.CurrentAmount > 0)
                 yield return new WaitForSeconds(.1f);
 
             Destroy(this);
