@@ -23,7 +23,7 @@ namespace Mistaken.BetterSCP.SCP500
         {
             success = false;
             var player = sender.GetPlayer();
-            if (player.CurrentItem.Type != ItemType.SCP500)
+            if (player.CurrentItem?.Type != ItemType.SCP500)
                 return new string[] { "Nie masz SCP 500 w ręce" };
             if (!Scp500Handler.Instance.Resurect(sender.GetPlayer()))
                 return new string[] { "Nie udało się nikogo wskrzsić" };
