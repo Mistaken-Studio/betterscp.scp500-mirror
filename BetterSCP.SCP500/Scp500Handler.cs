@@ -103,6 +103,7 @@ namespace Mistaken.BetterSCP.SCP500
                     return false;
                 }
 
+                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, true);
                 player.EnableEffect<CustomPlayerEffects.Amnesia>(15);
                 player.EnableEffect<CustomPlayerEffects.Ensnared>(11);
                 player.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Używam <color=yellow>SCP 500</color> na {target.Nickname}", 9);
@@ -122,12 +123,14 @@ namespace Mistaken.BetterSCP.SCP500
                             if (target.IsOverwatchEnabled)
                             {
                                 player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz chyba nie chce być wskrzeszony", 5);
+                                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                 return;
                             }
 
                             if (target.IsAlive)
                             {
                                 player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Jesteś pewien że ten gracz jest martwy?", 5);
+                                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                 return;
                             }
 
@@ -141,6 +144,7 @@ namespace Mistaken.BetterSCP.SCP500
                             target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
                             target.Role = nearest.NetworkInfo.RoleType;
 
+                            target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
                             target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
                             target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, false);
