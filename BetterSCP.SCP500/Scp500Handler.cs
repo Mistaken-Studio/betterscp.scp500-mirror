@@ -40,7 +40,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem += this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
-            Exiled.Events.Handlers.Player.ItemUsed += this.Player_ItemUsed;
+            Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
         }
 
         public override void OnDisable()
@@ -50,7 +50,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem -= this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
-            Exiled.Events.Handlers.Player.ItemUsed -= this.Player_ItemUsed;
+            Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
         }
 
         public bool Resurect(Player player)
@@ -139,7 +139,7 @@ namespace Mistaken.BetterSCP.SCP500
                             player.RemoveItem(item, false);
                             target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
                             target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
-                            target.Role = nearest.NetworkInfo.RoleType;
+                            target.Role.Type = nearest.NetworkInfo.RoleType;
 
                             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
                             target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
@@ -185,7 +185,7 @@ namespace Mistaken.BetterSCP.SCP500
         private static readonly List<string> Resurections = new List<string>();
         private static readonly HashSet<string> Resurected = new HashSet<string>();
 
-        private void Player_ItemUsed(Exiled.Events.EventArgs.UsedItemEventArgs ev)
+        private void Player_UsedItem(Exiled.Events.EventArgs.UsedItemEventArgs ev)
         {
             if (ev.Item.Type != ItemType.SCP500)
                 return;
