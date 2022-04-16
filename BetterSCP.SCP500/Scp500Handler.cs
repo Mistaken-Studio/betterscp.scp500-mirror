@@ -41,7 +41,6 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
             Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
-            Exiled.Events.Handlers.Server.RespawningTeam += this.Server_RespawningTeam;
         }
 
         public override void OnDisable()
@@ -52,7 +51,6 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
             Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
-            Exiled.Events.Handlers.Server.RespawningTeam -= this.Server_RespawningTeam;
         }
 
         public bool Resurect(Player player)
@@ -113,7 +111,7 @@ namespace Mistaken.BetterSCP.SCP500
                     return false;
                 }
 
-                CurHappeningResurections.Add(target.UserId);
+                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, true);
                 player.EnableEffect<CustomPlayerEffects.Amnesia>(15);
                 player.EnableEffect<CustomPlayerEffects.Ensnared>(11);
                 player.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Używam <color=yellow>SCP 500</color> na {target.Nickname}", 9);
@@ -129,21 +127,21 @@ namespace Mistaken.BetterSCP.SCP500
                                 if (target == null || target.GameObject == null || !target.IsConnected)
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
-                                    CurHappeningResurections.Remove(target.UserId);
+                                    target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                     return;
                                 }
 
                                 if (target.IsOverwatchEnabled)
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz chyba nie chce być wskrzeszony", 5);
-                                    CurHappeningResurections.Remove(target.UserId);
+                                    target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                     return;
                                 }
 
                                 if (target.IsAlive)
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Jesteś pewien że ten gracz jest martwy?", 5);
-                                    CurHappeningResurections.Remove(target.UserId);
+                                    target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                     return;
                                 }
 
@@ -156,7 +154,7 @@ namespace Mistaken.BetterSCP.SCP500
                                 target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
                                 target.Role.Type = nearest.NetworkInfo.RoleType;
 
-                                CurHappeningResurections.Remove(target.UserId);
+                                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                 EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
                                 target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
                                 target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, false);
@@ -194,7 +192,7 @@ namespace Mistaken.BetterSCP.SCP500
                         catch (Exception ex)
                         {
                             this.Log.Error(ex);
-                            CurHappeningResurections.Remove(target.UserId);
+                            target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                         }
                     }, "Resurection.Resurect");
                 return true;
@@ -205,7 +203,6 @@ namespace Mistaken.BetterSCP.SCP500
         }
 
         private static readonly List<string> Resurections = new List<string>();
-        private static readonly HashSet<string> CurHappeningResurections = new HashSet<string>();
         private static readonly HashSet<string> Resurected = new HashSet<string>();
 
         private void Player_UsedItem(Exiled.Events.EventArgs.UsedItemEventArgs ev)
@@ -220,15 +217,6 @@ namespace Mistaken.BetterSCP.SCP500
             MEC.Timing.CallDelayed(8, () => effect.Intensity = oldIntensity);
             ev.Player.ArtificialHealth += 1;
             SCP500Shield.Ini<SCP500Shield>(ev.Player);
-        }
-
-        private void Server_RespawningTeam(Exiled.Events.EventArgs.RespawningTeamEventArgs ev)
-        {
-            foreach (var player in ev.Players.ToArray())
-            {
-                if (CurHappeningResurections.Contains(player.UserId))
-                    ev.Players.Remove(player);
-            }
         }
 
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
