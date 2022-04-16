@@ -224,7 +224,7 @@ namespace Mistaken.BetterSCP.SCP500
 
         private void Server_RespawningTeam(Exiled.Events.EventArgs.RespawningTeamEventArgs ev)
         {
-            foreach (var player in ev.Players)
+            foreach (var player in ev.Players.ToArray())
             {
                 if (CurHappeningResurections.Contains(player.UserId))
                     ev.Players.Remove(player);
