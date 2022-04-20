@@ -40,7 +40,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem += this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
-            Exiled.Events.Handlers.Player.ItemUsed += this.Player_ItemUsed;
+            Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
         }
 
         public override void OnDisable()
@@ -50,7 +50,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem -= this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
-            Exiled.Events.Handlers.Player.ItemUsed -= this.Player_ItemUsed;
+            Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
         }
 
         public bool Resurect(Player player)
@@ -60,8 +60,10 @@ namespace Mistaken.BetterSCP.SCP500
             var originalRole = player.Role;
             float nearestDistance = 999;
             Ragdoll nearest = null;
-            foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.NetworkInfo.ExistenceTime < PluginHandler.Instance.Config.MaxDeathTime))
+            foreach (var ragdoll in Map.Ragdolls.ToArray())
             {
+                if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
+                    continue;
                 if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp") || ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
                     continue;
                 var target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
@@ -73,10 +75,10 @@ namespace Mistaken.BetterSCP.SCP500
 
                 try
                 {
-                    var distance = Vector3.Distance(player.Position, ragdoll.transform.position);
+                    var distance = Vector3.Distance(player.Position, ragdoll.Base.transform.position);
                     if (distance < PluginHandler.Instance.Config.MaximalDistance && distance < nearestDistance)
                     {
-                        nearest = ragdoll;
+                        nearest = ragdoll.Base;
                         nearestDistance = distance;
                     }
                 }
@@ -91,18 +93,25 @@ namespace Mistaken.BetterSCP.SCP500
             if (nearestDistance != 999)
             {
                 var target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
+                if (!target?.IsConnected ?? true)
+                {
+                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
+                    return false;
+                }
+
                 if (Resurected.Contains(target.UserId))
                 {
-                    player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz może zostać wskrzeszony raz na rundę", 5);
+                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz może zostać wskrzeszony raz na życie", 5);
                     return false;
                 }
 
                 if (Resurections.Where(i => i == target.UserId).Count() > 3)
                 {
-                    player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Możesz wskrzesić 3 osoby na rundę", 5);
+                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Możesz wskrzesić 3 osoby na rundę", 5);
                     return false;
                 }
 
+                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, true);
                 player.EnableEffect<CustomPlayerEffects.Amnesia>(15);
                 player.EnableEffect<CustomPlayerEffects.Ensnared>(11);
                 player.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Używam <color=yellow>SCP 500</color> na {target.Nickname}", 9);
@@ -110,82 +119,93 @@ namespace Mistaken.BetterSCP.SCP500
                     10,
                     () =>
                     {
-                        if (player.Role == originalRole)
+                        try
                         {
-                            target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
-                            if (target == null || target.GameObject == null || !target.IsConnected)
+                            if (player.Role == originalRole)
                             {
-                                player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
-                                return;
-                            }
-
-                            if (target.IsOverwatchEnabled)
-                            {
-                                player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz chyba nie chce być wskrzeszony", 5);
-                                return;
-                            }
-
-                            if (target.IsAlive)
-                            {
-                                player.SetGUI("u500", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Jesteś pewien że ten gracz jest martwy?", 5);
-                                return;
-                            }
-
-                            Vector3 pos = nearest.transform.position;
-                            NetworkServer.Destroy(nearest.gameObject);
-                            Resurected.Add(target.UserId);
-                            Resurections.Add(player.UserId);
-                            var item = player.CurrentItem;
-                            player.RemoveItem(item, false);
-                            target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
-                            target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
-                            target.Role = nearest.NetworkInfo.RoleType;
-
-                            EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
-                            target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
-                            target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, false);
-                            target.ClearInventory();
-                            this.CallDelayed(
-                                0.5f,
-                                () =>
+                                target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
+                                if (target == null || target.GameObject == null || !target.IsConnected)
                                 {
-                                    target.AddItem(item);
-                                    this.CallDelayed(
-                                        0.5f,
-                                        () =>
-                                        {
-                                            try
+                                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
+                                    target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                    return;
+                                }
+
+                                if (target.IsOverwatchEnabled)
+                                {
+                                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz chyba nie chce być wskrzeszony", 5);
+                                    target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                    return;
+                                }
+
+                                if (target.IsAlive)
+                                {
+                                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Jesteś pewien że ten gracz jest martwy?", 5);
+                                    target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                    return;
+                                }
+
+                                Vector3 pos = nearest.transform.position;
+                                NetworkServer.Destroy(nearest.gameObject);
+                                Resurected.Add(target.UserId);
+                                var item = player.CurrentItem;
+                                player.RemoveItem(item, false);
+                                target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
+                                target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
+                                target.Role.Type = nearest.NetworkInfo.RoleType;
+
+                                target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
+                                target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
+                                target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, false);
+                                target.ClearInventory();
+                                this.CallDelayed(
+                                    0.5f,
+                                    () =>
+                                    {
+                                        target.AddItem(item);
+                                        this.CallDelayed(
+                                            0.5f,
+                                            () =>
                                             {
-                                                ((Consumable)item.Base).ServerOnUsingCompleted();
-                                            }
-                                            catch
-                                            {
-                                            }
-                                        });
-                                    this.CallDelayed(0.5f, () => target.Position = pos + Vector3.up);
-                                    target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=yellow>wskrzeszony</color> przez {player.Nickname}", 5);
-                                    target.Health = 5;
-                                    target.ArtificialHealth = 75;
-                                    target.EnableEffect<CustomPlayerEffects.Blinded>(10);
-                                    target.EnableEffect<CustomPlayerEffects.Deafened>(15);
-                                    target.EnableEffect<CustomPlayerEffects.Disabled>(30);
-                                    target.EnableEffect<CustomPlayerEffects.Concussed>(15);
-                                    target.EnableEffect<CustomPlayerEffects.Flashed>(5);
-                                    RLogger.Log("RESURECT", "RESURECT", $"Resurected {target.PlayerToString()}");
-                                }, "Resurect.Respawn");
+                                                try
+                                                {
+                                                    ((Consumable)item.Base).ServerOnUsingCompleted();
+                                                }
+                                                catch
+                                                {
+                                                }
+                                            });
+                                        this.CallDelayed(0.5f, () => target.Position = pos + Vector3.up);
+                                        target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=yellow>wskrzeszony</color> przez {player.Nickname}", 5);
+                                        target.Health = 5;
+                                        target.ArtificialHealth = 75;
+                                        target.EnableEffect<CustomPlayerEffects.Blinded>(10);
+                                        target.EnableEffect<CustomPlayerEffects.Deafened>(15);
+                                        target.EnableEffect<CustomPlayerEffects.Disabled>(30);
+                                        target.EnableEffect<CustomPlayerEffects.Concussed>(15);
+                                        target.EnableEffect<CustomPlayerEffects.Flashed>(5);
+                                        RLogger.Log("RESURECT", "RESURECT", $"Resurected {target.PlayerToString()}");
+                                    }, "Resurect.Respawn");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.Log.Error(ex);
+                            target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                         }
                     }, "Resurection.Resurect");
                 return true;
             }
             else
-                player.SendConsoleMessage("[SCP 500] No targers in range", "red");
+                player.SendConsoleMessage("[SCP 500] No targets in range", "red");
             return false;
         }
 
         private static readonly List<string> Resurections = new List<string>();
         private static readonly HashSet<string> Resurected = new HashSet<string>();
 
-        private void Player_ItemUsed(Exiled.Events.EventArgs.UsedItemEventArgs ev)
+        private void Player_UsedItem(Exiled.Events.EventArgs.UsedItemEventArgs ev)
         {
             if (ev.Item.Type != ItemType.SCP500)
                 return;
@@ -207,6 +227,8 @@ namespace Mistaken.BetterSCP.SCP500
         private void Player_Died(Exiled.Events.EventArgs.DiedEventArgs ev)
         {
             ev.Target.SetGUI("u500", PseudoGUIPosition.TOP, null);
+            if (Resurected.Contains(ev.Target.UserId))
+                Timing.CallDelayed(PluginHandler.Instance.Config.MaxDeathTime + 1, () => Resurected.Remove(ev.Target.UserId));
         }
 
         private void Server_RestartingRound()
@@ -242,21 +264,23 @@ namespace Mistaken.BetterSCP.SCP500
                     float nearestDistance = 999;
                     Ragdoll nearest = null;
                     Player target = null;
-                    foreach (var ragdoll in UnityEngine.Object.FindObjectsOfType<Ragdoll>().Where(x => x.NetworkInfo.ExistenceTime < PluginHandler.Instance.Config.MaxDeathTime).ToArray())
+                    foreach (var ragdoll in Map.Ragdolls.ToArray())
                     {
-                        target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
-                        if (target == null)
+                        if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                             continue;
-                        if (!target.IsConnected)
+                        target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
+                        if (!target?.IsConnected ?? true)
+                            continue;
+                        if (Resurected.Contains(target.UserId))
                             continue;
                         if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp"))
                             continue;
                         if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
                             continue;
-                        var distance = Vector3.Distance(player.Position, ragdoll.transform.position);
+                        var distance = Vector3.Distance(player.Position, ragdoll.Base.transform.position);
                         if (distance < PluginHandler.Instance.Config.MaximalDistance && distance < nearestDistance)
                         {
-                            nearest = ragdoll;
+                            nearest = ragdoll.Base;
                             nearestDistance = distance;
                         }
                     }
