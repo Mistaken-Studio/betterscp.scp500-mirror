@@ -40,7 +40,8 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem += this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
-            Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
+
+            // Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
         }
 
         public override void OnDisable()
@@ -50,7 +51,8 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem -= this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
-            Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
+
+            // Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
         }
 
         public bool Resurect(Player player)
