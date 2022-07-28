@@ -40,8 +40,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem += this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
-
-            // Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
+            Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
         }
 
         public override void OnDisable()
@@ -51,8 +50,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.UsingItem -= this.Player_UsingItem;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
-
-            // Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
+            Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
         }
 
         public bool Resurect(Player player)
@@ -211,14 +209,16 @@ namespace Mistaken.BetterSCP.SCP500
         {
             if (ev.Item.Type != ItemType.SCP500)
                 return;
-            ev.Player.EnableEffect<CustomPlayerEffects.Invigorated>(30);
-            var effect = ev.Player.GetEffect(Exiled.API.Enums.EffectType.Scp207);
+
+            // ev.Player.EnableEffect<CustomPlayerEffects.Invigorated>(30);
+            var effect = ev.Player.GetEffect(Exiled.API.Enums.EffectType.MovementBoost);
             byte oldIntensity = effect.Intensity;
-            effect.Intensity = 4;
+            effect.Intensity = 10;
             effect.ServerChangeDuration(7, true);
             MEC.Timing.CallDelayed(8, () => effect.Intensity = oldIntensity);
-            ev.Player.ArtificialHealth += 1;
-            SCP500Shield.Ini<SCP500Shield>(ev.Player);
+
+            // ev.Player.ArtificialHealth += 1;
+            // SCP500Shield.Ini<SCP500Shield>(ev.Player);
         }
 
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
