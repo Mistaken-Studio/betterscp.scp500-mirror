@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Exiled.API.Extensions;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
 using InventorySystem.Items.Usables;
@@ -64,7 +65,7 @@ namespace Mistaken.BetterSCP.SCP500
             {
                 if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                     continue;
-                if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp") || ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
+                if (ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
                     continue;
                 var target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                 if (target == null || target.IsOverwatchEnabled || target.GameObject == null || !target.IsConnected)
@@ -270,14 +271,12 @@ namespace Mistaken.BetterSCP.SCP500
                     {
                         if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                             continue;
+                        if (ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
+                            continue;
                         target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                         if (!target?.IsConnected ?? true)
                             continue;
                         if (Resurected.Contains(target.UserId))
-                            continue;
-                        if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("scp"))
-                            continue;
-                        if (ragdoll.NetworkInfo.OwnerHub.name.ToLower().Contains("tutorial"))
                             continue;
                         var distance = Vector3.Distance(player.Position, ragdoll.Base.transform.position);
                         if (distance < PluginHandler.Instance.Config.MaximalDistance && distance < nearestDistance)
