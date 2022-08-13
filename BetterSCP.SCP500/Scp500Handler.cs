@@ -113,7 +113,8 @@ namespace Mistaken.BetterSCP.SCP500
                 }
 
                 target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, true);
-                player.EnableEffect<CustomPlayerEffects.Amnesia>(15);
+                player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, true);
+                player.EnableEffect<CustomPlayerEffects.Amnesia>(11);
                 player.EnableEffect<CustomPlayerEffects.Ensnared>(11);
                 player.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Używam <color=yellow>SCP 500</color> na {target.Nickname}", 9);
                 this.CallDelayed(
@@ -129,6 +130,7 @@ namespace Mistaken.BetterSCP.SCP500
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
                                     target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                    player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
                                     return;
                                 }
 
@@ -136,6 +138,7 @@ namespace Mistaken.BetterSCP.SCP500
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracz chyba nie chce być wskrzeszony", 5);
                                     target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                    player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
                                     return;
                                 }
 
@@ -143,6 +146,7 @@ namespace Mistaken.BetterSCP.SCP500
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Jesteś pewien że ten gracz jest martwy?", 5);
                                     target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                    player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
                                     return;
                                 }
 
@@ -156,6 +160,7 @@ namespace Mistaken.BetterSCP.SCP500
                                 target.Role.Type = nearest.NetworkInfo.RoleType;
 
                                 target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                                player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
                                 EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
                                 target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
                                 target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, false);
@@ -194,6 +199,7 @@ namespace Mistaken.BetterSCP.SCP500
                         {
                             this.Log.Error(ex);
                             target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
+                            player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
                         }
                     }, "Resurection.Resurect");
                 return true;
