@@ -58,7 +58,7 @@ namespace Mistaken.BetterSCP.SCP500
         {
             if (player.CurrentItem.Type != ItemType.SCP500)
                 return false;
-            var originalRole = player.Role;
+            var originalRole = player.Role.Type;
             float nearestDistance = 999;
             Ragdoll nearest = null;
             foreach (var ragdoll in Map.Ragdolls.ToArray())
@@ -94,6 +94,12 @@ namespace Mistaken.BetterSCP.SCP500
             if (nearestDistance != 999)
             {
                 var target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
+                if (Exiled.API.Features.Ragdoll.Get(nearest)?.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
+                {
+                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Zwłoki gracza są zatomizowane", 5);
+                    return false;
+                }
+
                 if (!target?.IsConnected ?? true)
                 {
                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
@@ -123,7 +129,7 @@ namespace Mistaken.BetterSCP.SCP500
                     {
                         try
                         {
-                            if (player.Role == originalRole)
+                            if (player.Role.Type == originalRole)
                             {
                                 target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
                                 if (target == null || target.GameObject == null || !target.IsConnected)
@@ -276,6 +282,8 @@ namespace Mistaken.BetterSCP.SCP500
                     foreach (var ragdoll in Map.Ragdolls.ToArray())
                     {
                         if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
+                            continue;
+                        if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
                             continue;
                         if (ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
                             continue;
