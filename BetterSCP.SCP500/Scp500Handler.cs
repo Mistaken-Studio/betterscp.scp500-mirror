@@ -42,6 +42,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
             Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
+            Exiled.Events.Handlers.Scp049.FinishingRecall += this.Scp049_FinishingRecall;
         }
 
         public override void OnDisable()
@@ -52,6 +53,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
             Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
+            Exiled.Events.Handlers.Scp049.FinishingRecall -= this.Scp049_FinishingRecall;
         }
 
         public bool Resurect(Player player)
@@ -65,7 +67,9 @@ namespace Mistaken.BetterSCP.SCP500
             {
                 if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                     continue;
-                if (ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
+                if ((ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp && ragdoll.NetworkInfo.RoleType != RoleType.Scp0492) || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
+                    continue;
+                if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
                     continue;
                 var target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                 if (target == null || target.IsOverwatchEnabled || target.GameObject == null || !target.IsConnected)
@@ -94,12 +98,6 @@ namespace Mistaken.BetterSCP.SCP500
             if (nearestDistance != 999)
             {
                 var target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
-                if (Exiled.API.Features.Ragdoll.Get(nearest)?.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
-                {
-                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Zwłoki gracza są zatomizowane", 5);
-                    return false;
-                }
-
                 if (!target?.IsConnected ?? true)
                 {
                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
@@ -112,9 +110,9 @@ namespace Mistaken.BetterSCP.SCP500
                     return false;
                 }
 
-                if (Resurections.Where(i => i == target.UserId).Count() > 3)
+                if (nearest.NetworkInfo.RoleType == RoleType.Scp0492 && !RoleBeforeRecall.TryGetValue(target, out _))
                 {
-                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Możesz wskrzesić 3 osoby na rundę", 5);
+                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Nie znaleziono roli gracza przed sprzed wskrzeszenia (zgłoś ten błąd do Xname#3824)", 5);
                     return false;
                 }
 
@@ -163,7 +161,14 @@ namespace Mistaken.BetterSCP.SCP500
                                 player.RemoveItem(item, false);
                                 target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
                                 target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
-                                target.Role.Type = nearest.NetworkInfo.RoleType;
+
+                                if (nearest.NetworkInfo.RoleType == RoleType.Scp0492)
+                                {
+                                    target.Role.Type = RoleBeforeRecall[target];
+                                    RoleBeforeRecall.Remove(target);
+                                }
+                                else
+                                    target.Role.Type = nearest.NetworkInfo.RoleType;
 
                                 target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
                                 player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
@@ -175,23 +180,22 @@ namespace Mistaken.BetterSCP.SCP500
                                     0.5f,
                                     () =>
                                     {
-                                        target.AddItem(item);
-                                        this.CallDelayed(
-                                            0.5f,
-                                            () =>
-                                            {
-                                                try
-                                                {
-                                                    ((Consumable)item.Base).ServerOnUsingCompleted();
-                                                }
-                                                catch
-                                                {
-                                                }
-                                            });
-                                        this.CallDelayed(0.5f, () => target.Position = pos + Vector3.up);
-                                        target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=yellow>wskrzeszony</color> przez {player.Nickname}", 5);
                                         target.Health = 5;
                                         target.ArtificialHealth = 75;
+
+                                        target.AddItem(item);
+                                        try
+                                        {
+                                            ((Consumable)item.Base).ServerOnUsingCompleted();
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            this.Log.Error(ex.Message);
+                                            this.Log.Error(ex.StackTrace);
+                                        }
+
+                                        this.CallDelayed(0.5f, () => target.Position = pos + Vector3.up);
+                                        target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=yellow>wskrzeszony</color> przez {player.Nickname}", 5);
                                         target.EnableEffect<CustomPlayerEffects.Blinded>(10);
                                         target.EnableEffect<CustomPlayerEffects.Deafened>(15);
                                         target.EnableEffect<CustomPlayerEffects.Disabled>(30);
@@ -215,23 +219,19 @@ namespace Mistaken.BetterSCP.SCP500
             return false;
         }
 
-        private static readonly List<string> Resurections = new List<string>();
         private static readonly HashSet<string> Resurected = new HashSet<string>();
+        private static readonly Dictionary<Player, RoleType> RoleBeforeRecall = new Dictionary<Player, RoleType>();
 
         private void Player_UsedItem(Exiled.Events.EventArgs.UsedItemEventArgs ev)
         {
             if (ev.Item.Type != ItemType.SCP500)
                 return;
 
-            // ev.Player.EnableEffect<CustomPlayerEffects.Invigorated>(30);
             var effect = ev.Player.GetEffect(Exiled.API.Enums.EffectType.MovementBoost);
             byte oldIntensity = effect.Intensity;
             effect.Intensity = 10;
             effect.ServerChangeDuration(7, true);
             MEC.Timing.CallDelayed(8, () => effect.Intensity = oldIntensity);
-
-            // ev.Player.ArtificialHealth += 1;
-            // SCP500Shield.Ini<SCP500Shield>(ev.Player);
         }
 
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
@@ -248,8 +248,8 @@ namespace Mistaken.BetterSCP.SCP500
 
         private void Server_RestartingRound()
         {
-            Resurections.Clear();
             Resurected.Clear();
+            RoleBeforeRecall.Clear();
         }
 
         private void Player_UsingItem(Exiled.Events.EventArgs.UsingItemEventArgs ev)
@@ -268,6 +268,12 @@ namespace Mistaken.BetterSCP.SCP500
                 this.RunCoroutine(this.Interface(ev.Player), "Interface");
         }
 
+        private void Scp049_FinishingRecall(Exiled.Events.EventArgs.FinishingRecallEventArgs ev)
+        {
+            if (ev.IsAllowed)
+                RoleBeforeRecall[ev.Target] = ev.Ragdoll.NetworkInfo.RoleType;
+        }
+
         private IEnumerator<float> Interface(Player player)
         {
             yield return Timing.WaitForSeconds(1);
@@ -283,9 +289,9 @@ namespace Mistaken.BetterSCP.SCP500
                     {
                         if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                             continue;
-                        if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
+                        if ((ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp && ragdoll.NetworkInfo.RoleType != RoleType.Scp0492) || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
                             continue;
-                        if (ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
+                        if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
                             continue;
                         target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                         if (!target?.IsConnected ?? true)
