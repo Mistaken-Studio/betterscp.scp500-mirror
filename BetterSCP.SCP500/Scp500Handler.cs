@@ -69,6 +69,8 @@ namespace Mistaken.BetterSCP.SCP500
                     continue;
                 if ((ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp && ragdoll.NetworkInfo.RoleType != RoleType.Scp0492) || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
                     continue;
+                if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
+                    continue;
                 var target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                 if (target == null || target.IsOverwatchEnabled || target.GameObject == null || !target.IsConnected)
                 {
@@ -96,12 +98,6 @@ namespace Mistaken.BetterSCP.SCP500
             if (nearestDistance != 999)
             {
                 var target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
-                if (Exiled.API.Features.Ragdoll.Get(nearest)?.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
-                {
-                    player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Zwłoki gracza zostały zatomizowane", 5);
-                    return false;
-                }
-
                 if (!target?.IsConnected ?? true)
                 {
                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
@@ -293,9 +289,9 @@ namespace Mistaken.BetterSCP.SCP500
                     {
                         if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                             continue;
-                        if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
-                            continue;
                         if ((ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp && ragdoll.NetworkInfo.RoleType != RoleType.Scp0492) || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
+                            continue;
+                        if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
                             continue;
                         target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                         if (!target?.IsConnected ?? true)
