@@ -271,7 +271,21 @@ namespace Mistaken.BetterSCP.SCP500
         private void Scp049_FinishingRecall(Exiled.Events.EventArgs.FinishingRecallEventArgs ev)
         {
             if (ev.IsAllowed)
-                RoleBeforeRecall[ev.Target] = ev.Ragdoll.NetworkInfo.RoleType;
+                return;
+
+            Exiled.API.Features.Ragdoll ragdoll = ev.Ragdoll;
+            if (ragdoll == null)
+            {
+                UnityEngine.Debug.LogError("Ragdoll was null (1)");
+                ragdoll = Exiled.API.Features.Ragdoll.Get(ev.Target).FirstOrDefault();
+                if (ragdoll == null)
+                {
+                    UnityEngine.Debug.LogError("Ragdoll was null (2)");
+                    return;
+                }
+            }
+
+            RoleBeforeRecall[ev.Target] = ev.Ragdoll.NetworkInfo.RoleType;
         }
 
         private IEnumerator<float> Interface(Player player)

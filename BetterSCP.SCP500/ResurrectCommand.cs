@@ -5,8 +5,8 @@
 // -----------------------------------------------------------------------
 
 using CommandSystem;
+using Exiled.API.Features;
 using Mistaken.API.Commands;
-using Mistaken.API.Extensions;
 
 namespace Mistaken.BetterSCP.SCP500
 {
@@ -22,10 +22,10 @@ namespace Mistaken.BetterSCP.SCP500
         public override string[] Execute(ICommandSender sender, string[] args, out bool success)
         {
             success = false;
-            var player = sender.GetPlayer();
+            var player = Player.Get(sender);
             if (player.CurrentItem?.Type != ItemType.SCP500)
                 return new string[] { "Nie masz SCP 500 w ręce" };
-            if (!Scp500Handler.Instance.Resurect(sender.GetPlayer()))
+            if (!Scp500Handler.Instance.Resurect(player))
                 return new string[] { "Nie udało się nikogo wskrzsić" };
             success = true;
             return new string[] { "Rozpoczynam" };
