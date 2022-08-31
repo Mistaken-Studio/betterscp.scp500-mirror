@@ -26,7 +26,7 @@ namespace Mistaken.BetterSCP.SCP500
         public override PluginPriority Priority => PluginPriority.Default;
 
         /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(5, 0, 0);
+        public override Version RequiredExiledVersion => new Version(5, 2, 2);
 
         /// <inheritdoc/>
         public override void OnEnabled()
