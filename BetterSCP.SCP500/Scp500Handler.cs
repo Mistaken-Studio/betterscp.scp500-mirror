@@ -10,6 +10,7 @@ using System.Linq;
 using Exiled.API.Extensions;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
+using FMOD;
 using InventorySystem.Items.Usables;
 using MEC;
 using Mirror;
@@ -301,17 +302,34 @@ namespace Mistaken.BetterSCP.SCP500
                     Player target = null;
                     foreach (var ragdoll in Map.Ragdolls.ToArray())
                     {
+                        if (ragdoll == null)
+                        {
+                            UnityEngine.Debug.LogError("Ragdoll was null 1");
+                            continue;
+                        }
+
+                        if (ragdoll.Base == null)
+                        {
+                            UnityEngine.Debug.LogError("Ragdoll was null 2");
+                            continue;
+                        }
+
                         if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                             continue;
+
                         if ((ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Scp && ragdoll.NetworkInfo.RoleType != RoleType.Scp0492) || ragdoll.NetworkInfo.RoleType.GetSide() == Exiled.API.Enums.Side.Tutorial)
                             continue;
+
                         if (ragdoll.DamageHandler is PlayerStatsSystem.DisruptorDamageHandler)
                             continue;
+
                         target = Player.Get(ragdoll.NetworkInfo.OwnerHub.playerId);
                         if (!target?.IsConnected ?? true)
                             continue;
+
                         if (Resurected.Contains(target.UserId))
                             continue;
+
                         var distance = Vector3.Distance(player.Position, ragdoll.Base.transform.position);
                         if (distance < PluginHandler.Instance.Config.MaximalDistance && distance < nearestDistance)
                         {
@@ -323,17 +341,14 @@ namespace Mistaken.BetterSCP.SCP500
                     if (!player.GetEffectActive<CustomPlayerEffects.Amnesia>())
                     {
                         if (nearestDistance != 999)
-                        {
                             player.SetGUI("u500", PseudoGUIPosition.TOP, $"Wpisz '.u500' w konsoli(~) aby <color=yellow>wskrzesić</color> {target.Nickname} ({PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(nearest.NetworkInfo.ExistenceTime)})");
-                        }
                         else
                             player.SetGUI("u500", PseudoGUIPosition.TOP, null);
                     }
                 }
                 catch (Exception ex)
                 {
-                    this.Log.Error(ex.Message);
-                    this.Log.Error(ex.StackTrace);
+                    this.Log.Error(ex);
                     player.SetGUI("u500", PseudoGUIPosition.TOP, null);
                 }
 
