@@ -129,8 +129,7 @@ namespace Mistaken.BetterSCP.SCP500
                         {
                             if (player.Role.Type == originalRole)
                             {
-                                target = Player.Get(nearest.NetworkInfo.OwnerHub.playerId);
-                                if (target == null || target.GameObject == null || !target.IsConnected)
+                                if (!target.IsConnected())
                                 {
                                     player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Gracza nie ma na serwerze", 5);
                                     target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
