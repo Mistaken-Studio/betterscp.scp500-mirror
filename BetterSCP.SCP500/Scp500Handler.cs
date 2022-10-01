@@ -301,17 +301,8 @@ namespace Mistaken.BetterSCP.SCP500
                     Player target = null;
                     foreach (var ragdoll in Map.Ragdolls.ToArray())
                     {
-                        if (ragdoll == null)
-                        {
-                            UnityEngine.Debug.LogError("Ragdoll was null 1");
-                            continue;
-                        }
-
                         if (ragdoll.Base == null)
-                        {
-                            UnityEngine.Debug.LogError("Ragdoll was null 2");
                             continue;
-                        }
 
                         if (ragdoll.NetworkInfo.ExistenceTime > PluginHandler.Instance.Config.MaxDeathTime)
                             continue;
