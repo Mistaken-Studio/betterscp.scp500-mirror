@@ -10,7 +10,6 @@ using System.Linq;
 using Exiled.API.Extensions;
 using Exiled.API.Features;
 using Exiled.API.Interfaces;
-using FMOD;
 using InventorySystem.Items.Usables;
 using MEC;
 using Mirror;
