@@ -9,16 +9,25 @@ using Exiled.API.Features;
 
 namespace Mistaken.BetterSCP.SCP500
 {
+    /// <summary>
+    /// EventArgs for PlayerRevived Event.
+    /// </summary>
     public class Scp500PlayerRevivedEventArgs : EventArgs
     {
-        public Scp500PlayerRevivedEventArgs(Player revived, Player reviver)
+        /// <summary>
+        /// Gets the Revived Player.
+        /// </summary>
+        public Player Revived { get; }
+
+        /// <summary>
+        /// Gets the Reviving Player.
+        /// </summary>
+        public Player Reviver { get; }
+
+        internal Scp500PlayerRevivedEventArgs(Player revived, Player reviver)
         {
             this.Revived = revived;
             this.Reviver = reviver;
         }
-
-        public Player Revived { get; set; }
-
-        public Player Reviver { get; set; }
     }
 }
