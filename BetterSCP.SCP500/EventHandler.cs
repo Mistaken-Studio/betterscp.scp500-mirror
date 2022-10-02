@@ -14,8 +14,6 @@ namespace Mistaken.BetterSCP.SCP500
         public static event CustomEventHandler<Scp500PlayerRevivedEventArgs> Scp500PlayerRevived;
 
         public static void OnScp500PlayerRevived(Scp500PlayerRevivedEventArgs ev)
-        {
-            Scp500PlayerRevived.InvokeSafely(ev);
-        }
+            => Scp500PlayerRevived.InvokeSafely(ev);
     }
 }

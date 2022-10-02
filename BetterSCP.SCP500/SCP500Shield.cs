@@ -58,7 +58,7 @@ namespace Mistaken.BetterSCP.SCP500
             this.disabledShields.Clear();
         }
 
-        private readonly List<Shield> disabledShields = new List<Shield>();
+        private readonly List<Shield> disabledShields = new ();
         private int maxShield = 1000;
 
         private IEnumerator Disable()

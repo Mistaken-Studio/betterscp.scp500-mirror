@@ -10,25 +10,18 @@ using Exiled.API.Features;
 
 namespace Mistaken.BetterSCP.SCP500
 {
-    /// <inheritdoc/>
-    public class PluginHandler : Plugin<Config>
+    internal class PluginHandler : Plugin<Config>
     {
-        /// <inheritdoc/>
         public override string Author => "Mistaken Devs";
 
-        /// <inheritdoc/>
-        public override string Name => "BetterSCP SCP500";
+        public override string Name => "BetterSCP-SCP500";
 
-        /// <inheritdoc/>
-        public override string Prefix => "MBSCP_500";
+        public override string Prefix => "MBSCP-500";
 
-        /// <inheritdoc/>
         public override PluginPriority Priority => PluginPriority.Default;
 
-        /// <inheritdoc/>
-        public override Version RequiredExiledVersion => new Version(5, 2, 2);
+        public override Version RequiredExiledVersion => new (5, 2, 2);
 
-        /// <inheritdoc/>
         public override void OnEnabled()
         {
             Instance = this;
@@ -40,7 +33,6 @@ namespace Mistaken.BetterSCP.SCP500
             base.OnEnabled();
         }
 
-        /// <inheritdoc/>
         public override void OnDisabled()
         {
             API.Diagnostics.Module.OnDisable(this);
