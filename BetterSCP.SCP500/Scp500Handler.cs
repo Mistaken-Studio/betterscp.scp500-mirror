@@ -123,7 +123,7 @@ namespace Mistaken.BetterSCP.SCP500
         }
 
         private static readonly HashSet<string> Resurrected = new ();
-        private static readonly Dictionary<Player, RoleType> RoleBeforeRecall = new ();
+        private static readonly Dictionary<Player, (RoleType RoleType, Vector3 Position)> RoleBeforeRecall = new ();
 
         private IEnumerator<float> ExecuteResurrection(Player player, Player target, Ragdoll ragdoll)
         {
@@ -163,31 +163,28 @@ namespace Mistaken.BetterSCP.SCP500
                 yield break;
             }
 
-            Exiled.API.Features.Items.Item item = null;
-            Vector3 pos = default;
             try
             {
-                item = player.CurrentItem;
-                pos = ragdoll.transform.position;
                 NetworkServer.Destroy(ragdoll.gameObject);
-                Resurrected.Add(target.UserId);
-                player.RemoveItem(item, false);
-                target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
-                target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
-
-                if (ragdoll.NetworkInfo.RoleType == RoleType.Scp0492)
-                {
-                    target.Role.Type = RoleBeforeRecall[target];
-                    RoleBeforeRecall.Remove(target);
-                }
-                else
-                    target.Role.Type = ragdoll.NetworkInfo.RoleType;
             }
-            catch (Exception ex)
+            catch
             {
-                this.Log.Error("ExecuteResurrection something broke");
-                this.Log.Error(ex);
+                UnityEngine.Debug.LogError("ExecuteResurrection: Ragdoll GameObject didn't exist!");
             }
+
+            var item = player.CurrentItem;
+            player.RemoveItem(item, false);
+            Resurrected.Add(target.UserId);
+            target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
+            target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
+
+            if (ragdoll.NetworkInfo.RoleType == RoleType.Scp0492)
+            {
+                target.Role.Type = RoleBeforeRecall[target].RoleType;
+                RoleBeforeRecall.Remove(target);
+            }
+            else
+                target.Role.Type = ragdoll.NetworkInfo.RoleType;
 
             target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
             player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
@@ -199,14 +196,14 @@ namespace Mistaken.BetterSCP.SCP500
             target.Health = 5;
             target.ArtificialHealth = 75;
             target.AddItem(item);
+
             try
             {
                 ((Consumable)item.Base).ServerOnUsingCompleted();
             }
             catch (Exception ex)
             {
-                this.Log.Error(ex.Message);
-                this.Log.Error(ex.StackTrace);
+                UnityEngine.Debug.LogError(ex);
             }
 
             target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=green>wskrzeszony</color> przez {player.Nickname}", 5);
@@ -217,7 +214,7 @@ namespace Mistaken.BetterSCP.SCP500
             target.EnableEffect<CustomPlayerEffects.Flashed>(5);
 
             yield return Timing.WaitForSeconds(0.5f);
-            target.Position = pos + Vector3.up;
+            target.Position = RoleBeforeRecall[target].Position;
             RLogger.Log("RESURECT", "RESURECT", $"Resurected {target.PlayerToString()}");
             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
         }
@@ -264,18 +261,18 @@ namespace Mistaken.BetterSCP.SCP500
                 return;
 
             Exiled.API.Features.Ragdoll ragdoll = ev.Ragdoll;
-            if (ragdoll == null)
+            if (ragdoll == null || ragdoll.Base == null)
             {
                 UnityEngine.Debug.LogError("Ragdoll was null (1)");
-                ragdoll = Exiled.API.Features.Ragdoll.Get(ev.Target).FirstOrDefault();
-                if (ragdoll == null)
+                ragdoll = Exiled.API.Features.Ragdoll.Get(ev.Target).LastOrDefault();
+                if (ragdoll == null || ragdoll.Base == null)
                 {
                     UnityEngine.Debug.LogError("Ragdoll was null (2)");
                     return;
                 }
             }
 
-            RoleBeforeRecall[ev.Target] = ev.Ragdoll.NetworkInfo.RoleType;
+            RoleBeforeRecall[ev.Target] = (ev.Ragdoll.NetworkInfo.RoleType, ev.Ragdoll.Base.transform.position + Vector3.up);
         }
 
         private IEnumerator<float> Interface(Player player)
