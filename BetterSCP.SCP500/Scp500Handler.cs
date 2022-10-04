@@ -39,6 +39,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Server.RestartingRound += this.Server_RestartingRound;
             Exiled.Events.Handlers.Player.ChangingItem += this.Player_ChangingItem;
             Exiled.Events.Handlers.Player.ChangingRole += this.Player_ChangingRole;
+            //Exiled.Events.Handlers.Player.Dying += this.Player_Dying;
             Exiled.Events.Handlers.Player.Died += this.Player_Died;
             Exiled.Events.Handlers.Player.UsedItem += this.Player_UsedItem;
             Exiled.Events.Handlers.Scp049.FinishingRecall += this.Scp049_FinishingRecall;
@@ -49,6 +50,7 @@ namespace Mistaken.BetterSCP.SCP500
             Exiled.Events.Handlers.Server.RestartingRound -= this.Server_RestartingRound;
             Exiled.Events.Handlers.Player.ChangingItem -= this.Player_ChangingItem;
             Exiled.Events.Handlers.Player.ChangingRole -= this.Player_ChangingRole;
+            //Exiled.Events.Handlers.Player.Dying -= this.Player_Dying;
             Exiled.Events.Handlers.Player.Died -= this.Player_Died;
             Exiled.Events.Handlers.Player.UsedItem -= this.Player_UsedItem;
             Exiled.Events.Handlers.Scp049.FinishingRecall -= this.Scp049_FinishingRecall;
@@ -178,10 +180,7 @@ namespace Mistaken.BetterSCP.SCP500
             target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
 
             if (ragdoll.NetworkInfo.RoleType == RoleType.Scp0492)
-            {
                 target.Role.Type = RoleBeforeRecall[target].RoleType;
-                RoleBeforeRecall.Remove(target);
-            }
             else
                 target.Role.Type = ragdoll.NetworkInfo.RoleType;
 
@@ -214,6 +213,7 @@ namespace Mistaken.BetterSCP.SCP500
 
             yield return Timing.WaitForSeconds(0.5f);
             target.Position = RoleBeforeRecall[target].Position;
+            RoleBeforeRecall.Remove(target);
             RLogger.Log("RESURECT", "RESURECT", $"Resurected {target.PlayerToString()}");
             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
         }
@@ -232,14 +232,28 @@ namespace Mistaken.BetterSCP.SCP500
 
         private void Player_ChangingRole(Exiled.Events.EventArgs.ChangingRoleEventArgs ev)
         {
+            if (!ev.IsAllowed)
+                return;
+
             ev.Player.SetGUI("u500", PseudoGUIPosition.TOP, null);
+        }
+
+        private void Player_Dying(Exiled.Events.EventArgs.DyingEventArgs ev)
+        {
+            if (!ev.IsAllowed)
+                return;
+
+            if (ev.Target.Role.Type != RoleType.Scp0492 || !RoleBeforeRecall.ContainsKey(ev.Target))
+                return;
+
+            RoleBeforeRecall[ev.Target] = (RoleBeforeRecall[ev.Target].RoleType, ev.Target.Position);
         }
 
         private void Player_Died(Exiled.Events.EventArgs.DiedEventArgs ev)
         {
             ev.Target.SetGUI("u500", PseudoGUIPosition.TOP, null);
             if (Resurrected.Contains(ev.Target.UserId))
-                this.CallDelayed(PluginHandler.Instance.Config.MaxDeathTime + 1, () => Resurrected.Remove(ev.Target.UserId), "BetterSCP.SCP500_Resurrected_Remove", true);
+                this.CallDelayed(PluginHandler.Instance.Config.MaxDeathTime + 1, () => Resurrected.Remove(ev.Target.UserId), "Resurrected_Remove", true);
         }
 
         private void Server_RestartingRound()
@@ -251,7 +265,7 @@ namespace Mistaken.BetterSCP.SCP500
         private void Player_ChangingItem(Exiled.Events.EventArgs.ChangingItemEventArgs ev)
         {
             if (ev.NewItem?.Type == ItemType.SCP500)
-                this.RunCoroutine(this.Interface(ev.Player), "BetterSCP.SCP500_Interface");
+                this.RunCoroutine(this.Interface(ev.Player), "Interface");
         }
 
         private void Scp049_FinishingRecall(Exiled.Events.EventArgs.FinishingRecallEventArgs ev)
@@ -271,7 +285,7 @@ namespace Mistaken.BetterSCP.SCP500
                 }
             }
 
-            RoleBeforeRecall[ev.Target] = (ev.Ragdoll.NetworkInfo.RoleType, ev.Ragdoll.Base.transform.position + Vector3.up);
+            RoleBeforeRecall[ev.Target] = (ev.Ragdoll.NetworkInfo.RoleType, ev.Ragdoll.Position + Vector3.up);
         }
 
         private IEnumerator<float> Interface(Player player)
