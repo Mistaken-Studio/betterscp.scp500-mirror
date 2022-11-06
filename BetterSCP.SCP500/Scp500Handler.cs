@@ -282,6 +282,8 @@ namespace Mistaken.BetterSCP.SCP500
 
             while (player?.CurrentItem?.Type == ItemType.SCP500)
             {
+                _resurrectableRagdolls[player].Clear();
+
                 try
                 {
                     foreach (var ragdoll in Map.Ragdolls.ToArray())
