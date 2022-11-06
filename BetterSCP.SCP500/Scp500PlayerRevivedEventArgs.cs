@@ -12,7 +12,7 @@ namespace Mistaken.BetterSCP.SCP500
     /// <summary>
     /// EventArgs for PlayerRevived Event.
     /// </summary>
-    public class Scp500PlayerRevivedEventArgs : EventArgs
+    public sealed class Scp500PlayerRevivedEventArgs : EventArgs
     {
         /// <summary>
         /// Gets the Revived Player.

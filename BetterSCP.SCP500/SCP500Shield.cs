@@ -11,25 +11,18 @@ using UnityEngine;
 
 namespace Mistaken.BetterSCP.SCP500
 {
-    /// <inheritdoc/>
-    public class SCP500Shield : Shield
+    internal sealed class SCP500Shield : Shield
     {
-        /// <inheritdoc/>
         protected override float MaxShield => this.maxShield;
 
-        /// <inheritdoc/>
         protected override float ShieldRechargeRate => 500f;
 
-        /// <inheritdoc/>
         protected override float ShieldEffectivnes => 1f;
 
-        /// <inheritdoc/>
         protected override float TimeUntilShieldRecharge => 0f;
 
-        /// <inheritdoc/>
         protected override float ShieldDropRateOnOverflow => 200f;
 
-        /// <inheritdoc/>
         protected override void Start()
         {
             base.Start();
@@ -45,10 +38,10 @@ namespace Mistaken.BetterSCP.SCP500
             }
         }
 
-        /// <inheritdoc/>
         protected override void OnDestroy()
         {
             base.OnDestroy();
+
             foreach (var item in this.gameObject.GetComponents<Shield>())
             {
                 if (this.disabledShields.Contains(item))
@@ -58,12 +51,13 @@ namespace Mistaken.BetterSCP.SCP500
             this.disabledShields.Clear();
         }
 
-        private readonly List<Shield> disabledShields = new ();
+        private readonly List<Shield> disabledShields = new();
         private int maxShield = 1000;
 
         private IEnumerator Disable()
         {
             int i = 0;
+
             while ((this.Process.CurrentAmount < 500 || i < 25) && i < 40)
             {
                 i++;
@@ -71,6 +65,7 @@ namespace Mistaken.BetterSCP.SCP500
             }
 
             this.maxShield = 0;
+
             while (this.Process.CurrentAmount > 0)
                 yield return new WaitForSeconds(.1f);
 
