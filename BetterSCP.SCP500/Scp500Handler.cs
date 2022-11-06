@@ -233,6 +233,9 @@ namespace Mistaken.BetterSCP.SCP500
             if (!ev.IsAllowed)
                 return;
 
+            if (_resurrected.Contains(ev.Player) && ev.NewRole != RoleType.Spectator)
+                _resurrected.Remove(ev.Player);
+
             ev.Player.SetGUI("u500", PseudoGUIPosition.TOP, null);
         }
 
@@ -325,13 +328,15 @@ namespace Mistaken.BetterSCP.SCP500
 
                     if (ragdolls.Count > 0)
                     {
+                        RagdollInfo info;
                         if (ragdolls.Count == 1)
                         {
-                            var deathtime = PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(ragdolls[0].NetworkInfo.ExistenceTime);
+                            info = ragdolls[0].NetworkInfo;
+                            var deathtime = PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(info.ExistenceTime);
                             player.SetGUI(
                             "u500",
                             PseudoGUIPosition.TOP,
-                            $"Wpisz '.u500' w konsoli (~) aby <color=green>wskrzesić</color> {ragdolls[0].NetworkInfo.Nickname} ({deathtime})");
+                            $"Wpisz '.u500' w konsoli (~) aby <color=green>wskrzesić</color> {info.Nickname} - {info.RoleType} ({deathtime})");
                         }
                         else
                         {
@@ -340,8 +345,9 @@ namespace Mistaken.BetterSCP.SCP500
 
                             for (int i = 0; i < ragdolls.Count; i++)
                             {
-                                var deathtime = PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(ragdolls[i].NetworkInfo.ExistenceTime);
-                                informResurrect.Add($"<br>ID: {i} | {ragdolls[i].NetworkInfo.Nickname} ({deathtime})");
+                                info = ragdolls[i].NetworkInfo;
+                                var deathtime = PluginHandler.Instance.Config.MaxDeathTime - Math.Floor(info.ExistenceTime);
+                                informResurrect.Add($"<br>ID: {i} | {info.Nickname} - {info.RoleType} ({deathtime})");
                             }
 
                             player.SetGUI("u500", PseudoGUIPosition.TOP, string.Join(string.Empty, informResurrect));
