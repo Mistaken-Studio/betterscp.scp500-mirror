@@ -202,7 +202,7 @@ namespace Mistaken.BetterSCP.SCP500
             target.EnableEffect<CustomPlayerEffects.Concussed>(15);
             target.EnableEffect<CustomPlayerEffects.Flashed>(5);
 
-            yield return Timing.WaitForSeconds(1f);
+            yield return Timing.WaitForSeconds(3f);
             target.Position = resurrectPosition;
             _runningResurrections.Remove(player);
             RLogger.Log("RESURRECT", "FINISH", $"Player {player.PlayerToString()} successfully resurrected {target.PlayerToString()}");
