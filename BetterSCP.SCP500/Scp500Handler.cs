@@ -175,6 +175,15 @@ namespace Mistaken.BetterSCP.SCP500
             else
                 target.Role.Type = ragdoll.NetworkInfo.RoleType;
 
+            target.IsGodModeEnabled = true;
+
+            void DisableGodMode()
+            {
+                target.Position = resurrectPosition;
+                target.IsGodModeEnabled = false;
+            }
+
+            this.CallDelayed(3.5f, DisableGodMode, nameof(DisableGodMode));
             target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
             player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
             target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
@@ -202,8 +211,6 @@ namespace Mistaken.BetterSCP.SCP500
             target.EnableEffect<CustomPlayerEffects.Concussed>(15);
             target.EnableEffect<CustomPlayerEffects.Flashed>(5);
 
-            yield return Timing.WaitForSeconds(3f);
-            target.Position = resurrectPosition;
             _runningResurrections.Remove(player);
             RLogger.Log("RESURRECT", "FINISH", $"Player {player.PlayerToString()} successfully resurrected {target.PlayerToString()}");
             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
