@@ -202,8 +202,8 @@ namespace Mistaken.BetterSCP.SCP500
             target.EnableEffect<CustomPlayerEffects.Concussed>(15);
             target.EnableEffect<CustomPlayerEffects.Flashed>(5);
 
-            yield return Timing.WaitForSeconds(0.5f);
-            target.Position = resurrectPosition + (Vector3.up * 0.5f);
+            yield return Timing.WaitForSeconds(1f);
+            target.Position = resurrectPosition;
             _runningResurrections.Remove(player);
             RLogger.Log("RESURRECT", "FINISH", $"Player {player.PlayerToString()} successfully resurrected {target.PlayerToString()}");
             EventHandler.OnScp500PlayerRevived(new Scp500PlayerRevivedEventArgs(target, player));
