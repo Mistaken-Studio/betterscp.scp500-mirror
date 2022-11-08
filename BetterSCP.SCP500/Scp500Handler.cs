@@ -103,7 +103,7 @@ namespace Mistaken.BetterSCP.SCP500
             var originalRole = player.Role.Type;
             Vector3 resurrectPosition = player.Position;
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 7; i++)
             {
                 if (!player.IsConnected())
                 {
