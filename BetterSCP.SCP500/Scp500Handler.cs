@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using CustomPlayerEffects;
+using InventorySystem;
 using InventorySystem.Items;
 using InventorySystem.Items.Usables;
 using MEC;
@@ -69,9 +70,9 @@ internal sealed class Scp500Handler
     }
 
     internal static readonly Dictionary<Player, List<BasicRagdoll>> _resurrectableRagdolls = new();
-    private static readonly HashSet<Player> _resurrected = new();
-    private static readonly List<Player> _runningResurrections = new();
     private static readonly Dictionary<Player, RoleTypeId> _roleBeforeRecall = new();
+    private static readonly List<Player> _runningResurrections = new();
+    private static readonly HashSet<Player> _resurrected = new();
 
     private IEnumerator<float> ExecuteResurrection(Player player, Player target, BasicRagdoll ragdoll)
     {
@@ -84,6 +85,7 @@ internal sealed class Scp500Handler
         player.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Używam <color=yellow>SCP-500</color> na {target.GetDisplayName()}", 9);
 
         var originalRole = player.Role;
+        var heldItem = player.CurrentItem;
         Vector3 resurrectPosition = player.Position;
 
         for (int i = 0; i < 7; i++)
@@ -96,6 +98,7 @@ internal sealed class Scp500Handler
 
             if (Vector3.Distance(resurrectPosition, player.Position) > 2.5f)
             {
+                player.SetGUI("u500_error", PseudoGUIPosition.TOP, "Nie udało się wskrzesić gracza | Oddaliłeś się za bardzo", 5);
                 _runningResurrections.Remove(player);
                 yield break;
             }
@@ -144,9 +147,12 @@ internal sealed class Scp500Handler
             Debug.LogError("ExecuteResurrection: Ragdoll GameObject didn't exist!");
         }
 
-        var item = player.CurrentItem;
-        player.ReferenceHub.inventory.UserInventory.Items.Remove(item.ItemSerial);
-        player.ReferenceHub.inventory.SendItemsNextFrame = true;
+        if (player.ReferenceHub.inventory.UserInventory.Items.ContainsKey(heldItem.ItemSerial))
+        {
+            player.ReferenceHub.inventory.UserInventory.Items.Remove(heldItem.ItemSerial);
+            player.ReferenceHub.inventory.SendItemsNextFrame = true;
+        }
+        
         _resurrected.Add(target);
         target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, true);
         target.SetSessionVariable(SessionVarType.ITEM_LESS_CLSSS_CHANGE, true);
@@ -161,13 +167,7 @@ internal sealed class Scp500Handler
 
         target.IsGodModeEnabled = true;
 
-        void DisableGodMode()
-        {
-            target.Position = resurrectPosition;
-            target.IsGodModeEnabled = false;
-        }
-
-        Timing.CallDelayed(3.5f, DisableGodMode);
+        Timing.CallDelayed(4f, () => target.IsGodModeEnabled = false);
         target.SetSessionVariable(SessionVarType.RESPAWN_BLOCK, false);
         player.SetSessionVariable(SessionVarType.BLOCK_INVENTORY_INTERACTION, false);
         target.SetSessionVariable(SessionVarType.NO_SPAWN_PROTECT, false);
@@ -176,12 +176,12 @@ internal sealed class Scp500Handler
 
         yield return Timing.WaitForSeconds(0.5f);
         target.Health = 5;
-        target.ArtificialHealth = 75;
-        target.ReferenceHub.inventory.UserInventory.Items.Add(item.ItemSerial, item);
+        ((AhpStat)target.ReferenceHub.playerStats.StatModules[1]).CurValue = 75;
 
         try
         {
-            (item as Consumable).ServerOnUsingCompleted();
+            (target.ReferenceHub.inventory.ServerAddItem(ItemType.SCP500) as Consumable)
+                .ServerOnUsingCompleted();
         }
         catch (Exception ex)
         {
@@ -190,11 +190,10 @@ internal sealed class Scp500Handler
 
         target.SetGUI("u500", PseudoGUIPosition.MIDDLE, $"Zostałeś <color=green>wskrzeszony</color> przez {player.GetDisplayName()}", 5);
         target.EffectsManager.EnableEffect<Blinded>(10);
-        target.EffectsManager.EnableEffect<Deafened>(15);
         target.EffectsManager.EnableEffect<Disabled>(20);
-        target.EffectsManager.EnableEffect<Concussed>(15);
         target.EffectsManager.EnableEffect<Flashed>(5);
 
+        target.Position = resurrectPosition;
         _runningResurrections.Remove(player);
         ServerLogs.AddLog(
             ServerLogs.Modules.ClassChange,
@@ -211,7 +210,7 @@ internal sealed class Scp500Handler
 
         var effect = player.EffectsManager.GetEffect<MovementBoost>();
         byte oldIntensity = effect.Intensity;
-        effect.Intensity = 10;
+        effect.Intensity += 10;
         effect.ServerChangeDuration(7, true);
         Timing.CallDelayed(8, () => effect.Intensity = oldIntensity);
     }
@@ -252,15 +251,16 @@ internal sealed class Scp500Handler
     [PluginEvent(ServerEventType.PlayerChangeItem)]
     private void OnPlayerChangeItem(Player player, ushort oldItem, ushort newItem)
     {
+        if (!player.ReferenceHub.inventory.UserInventory.Items.ContainsKey(newItem))
+            return;
+
         if (player.ReferenceHub.inventory.UserInventory.Items[newItem].ItemTypeId == ItemType.SCP500)
             Timing.RunCoroutine(Interface(player), nameof(Interface));
     }
 
     [PluginEvent(ServerEventType.Scp049ResurrectBody)]
     private void OnScp049ResurrectBody(Player player, Player target, BasicRagdoll ragdoll)
-    {
-        _roleBeforeRecall[target] = ragdoll.NetworkInfo.RoleType;
-    }
+        => _roleBeforeRecall[target] = ragdoll.NetworkInfo.RoleType;
 
     private IEnumerator<float> Interface(Player player)
     {
@@ -287,7 +287,7 @@ internal sealed class Scp500Handler
                     if ((data.RoleType.GetTeam() == Team.SCPs && data.RoleType != RoleTypeId.Scp0492) || data.RoleType.GetTeam() == Team.OtherAlive)
                         continue;
 
-                    if (data.Handler is PlayerStatsSystem.DisruptorDamageHandler)
+                    if (data.Handler is DisruptorDamageHandler)
                         continue;
 
                     var target = Player.Get(data.OwnerHub);

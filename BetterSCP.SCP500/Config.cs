@@ -9,5 +9,5 @@ internal sealed class Config
     [Description("Plugin options")]
     public float MaximalDistance { get; set; } = 6f;
 
-    public float MaxDeathTime { get; set; } = 35f;
+    public float MaxDeathTime { get; set; } = 45f;
 }
