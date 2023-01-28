@@ -1,24 +1,13 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="Config.cs" company="Mistaken">
-// Copyright (c) Mistaken. All rights reserved.
-// </copyright>
-// -----------------------------------------------------------------------
+﻿using System.ComponentModel;
 
-using System.ComponentModel;
-using Exiled.API.Interfaces;
+namespace Mistaken.BetterSCP.SCP500;
 
-namespace Mistaken.BetterSCP.SCP500
+internal sealed class Config
 {
-    internal sealed class Config : IConfig
-    {
-        public bool IsEnabled { get; set; } = true;
+    public bool Debug { get; set; } = false;
 
-        [Description("If true then debug will be displayed")]
-        public bool VerboseOutput { get; set; }
+    [Description("Plugin options")]
+    public float MaximalDistance { get; set; } = 6f;
 
-        [Description("Plugin configuration")]
-        public float MaximalDistance { get; set; } = 6f;
-
-        public float MaxDeathTime { get; set; } = 35f;
-    }
+    public float MaxDeathTime { get; set; } = 35f;
 }

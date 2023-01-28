@@ -1,65 +1,76 @@
-﻿// -----------------------------------------------------------------------
-// <copyright file="ResurrectCommand.cs" company="Mistaken">
-// Copyright (c) Mistaken. All rights reserved.
-// </copyright>
-// -----------------------------------------------------------------------
+﻿using CommandSystem;
+using PluginAPI.Core;
+using System;
 
-using CommandSystem;
-using Exiled.API.Features;
-using Mistaken.API.Commands;
+namespace Mistaken.BetterSCP.SCP500;
 
-namespace Mistaken.BetterSCP.SCP500
+[CommandHandler(typeof(ClientCommandHandler))]
+internal sealed class ResurrectCommand : ICommand
 {
-    [CommandHandler(typeof(ClientCommandHandler))]
-    internal sealed class ResurrectCommand : IBetterCommand
+    public string Command => "u500";
+
+    public string[] Aliases => Array.Empty<string>();
+
+    public string Description => "Allows resurrection of a player";
+
+    public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
     {
-        public override string Description => "Resurrection";
+        var player = Player.Get(sender);
 
-        public override string Command => "u500";
-
-        public override string[] Execute(ICommandSender sender, string[] args, out bool success)
+        if (player.CurrentItem?.ItemTypeId != ItemType.SCP500)
         {
-            success = false;
-            var player = Player.Get(sender);
+            response = "Nie masz SCP 500 w ręce" ;
+            return false;
+        }
 
-            if (player.CurrentItem?.Type != ItemType.SCP500)
-                return new string[] { "Nie masz SCP 500 w ręce" };
+        if (!Scp500Handler._resurrectableRagdolls.TryGetValue(player, out var ragdolls) || ragdolls.Count == 0)
+        {
+            response = "Nie ma nikogo w pobliżu, kogo da się wskrzesić";
+            return false;
+        }
 
-            if (!Scp500Handler._resurrectableRagdolls.TryGetValue(player, out var ragdolls) || ragdolls.Count == 0)
-                return new string[] { "Nie ma nikogo w pobliżu, kogo da się wskrzesić" };
-
-            if (ragdolls.Count == 1)
+        if (ragdolls.Count == 1)
+        {
+            if (!Scp500Handler.Instance.Resurect(player, ragdolls[0]))
             {
-                if (!Scp500Handler.Instance.Resurect(player, ragdolls[0]))
-                    return new string[] { "Nie udało się nikogo wskrzsić" };
+                response = "Nie udało się nikogo wskrzsić";
+                return false;
+            }
+        }
+        else
+        {
+            if (arguments.Count == 0)
+            {
+                response = "Musisz podać numer osoby, którą chcesz wskrzesić:\n";
+
+                for (int i = 0; i < ragdolls.Count; i++)
+                    response += $"Podaj argument '{i}' aby wskrzesić: {ragdolls[i].NetworkInfo.Nickname}\n";
+
+                return false;
+            }
+
+            if (int.TryParse(arguments.At(0), out var id))
+            {
+                if (id >= ragdolls.Count)
+                {
+                    response = "Podałeś nieprawidłową wartość";
+                    return false;
+                }
+
+                if (!Scp500Handler.Instance.Resurect(player, ragdolls[id]))
+                {
+                    response = "Nie udało się nikogo wskrzsić";
+                    return false;
+                }
             }
             else
             {
-                if (args.Length == 0)
-                {
-                    var tor = new string[ragdolls.Count + 1];
-                    tor[0] = "Musisz podać numer osoby, którą chcesz wskrzesić:";
-
-                    for (int i = 0; i < ragdolls.Count; i++)
-                        tor[i + 1] = $"Podaj argument '{i}' aby wskrzesić: {ragdolls[i].NetworkInfo.Nickname}";
-
-                    return tor;
-                }
-
-                if (int.TryParse(args[0], out var id))
-                {
-                    if (id >= ragdolls.Count)
-                        return new string[] { "Podałeś nieprawidłową wartość" };
-
-                    if (!Scp500Handler.Instance.Resurect(player, ragdolls[id]))
-                        return new string[] { "Nie udało się nikogo wskrzsić" };
-                }
-                else
-                    return new string[] { "Podałeś nieprawidłową wartość" };
+                response = "Podałeś nieprawidłową wartość";
+                return false;
             }
-
-            success = true;
-            return new string[] { "Rozpoczynam" };
         }
+
+        response = "Rozpoczynam";
+        return true;
     }
 }
